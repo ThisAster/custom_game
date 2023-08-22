@@ -1,8 +1,7 @@
 #include <SFML/Graphics.hpp>
 using namespace sf;
 
-int ground = 400;
-float offsetX = 0, offsetY = 0;
+float offsetX = 0, offsetY = 0; // перемещение карты
 
 
 const int H = 12;
@@ -46,46 +45,40 @@ public:
     void update(float time)
     {
         rect.left += dx * time;
-        CollisionX();
+        Collision(0);
         if (!onGround) dy = dy + 0.0005 * time;
         rect.top += dy * time;
         onGround = false;
-        CollisionY();
-        if (rect.top > ground) { rect.top = ground; dy = 0; onGround = true; }
+        Collision(1);
         currentFrame += 0.005 * time;
         if (currentFrame > 6) currentFrame -= 6;
         if (dx > 0) sprite.setTextureRect(IntRect(40 * int(currentFrame), 244, 40, 50));
         if (dx < 0) sprite.setTextureRect(IntRect(40 * int(currentFrame) + 40, 244, -40, 50));
-        sprite.setPosition(rect.left, rect.top);
+        sprite.setPosition(rect.left - offsetX, rect.top - offsetY);
 
         dx = 0;
     }
 
-    void CollisionX()
-    {
-        for (int i = rect.top/32; i<(rect.top + rect.height)/32; i++)
-            for (int j = rect.left / 32; j < (rect.left + rect.width) / 32; j++)
-            {
-                if (TileMap[i][j] == 'B')
-                {
-                    if (dx > 0) rect.left = j * 32 - rect.width;
-                    if (dx < 0) rect.left = j * 32 + 32;
-                }
-            }
-    }
 
-
-    void CollisionY()
+    void Collision(int dir)
     {
         for (int i = rect.top / 32; i < (rect.top + rect.height) / 32; i++)
             for (int j = rect.left / 32; j < (rect.left + rect.width) / 32; j++)
             {
                 if (TileMap[i][j] == 'B')
                 {
-                    if (dy > 0) { rect.top = i * 32 - rect.height; dy = 0; onGround = true; }
-                    if (dy < 0) { rect.left = i * 32 + 32; dy = 0;}
+                    if ((dx > 0) && (dir == 0)) rect.left = j * 32 - rect.width;
+                    if ((dx < 0 ) && (dir == 0)) rect.left = j * 32 + 32;
+                    if ((dy > 0) && (dir == 1)) { rect.top = i * 32 - rect.height; dy = 0; onGround = true; }
+                    if ((dy < 0) && (dir == 1)) { rect.left = i * 32 + 32; dy = 0;}
+                }
+                if (TileMap[i][j] == '0')
+                {
+                    TileMap[i][j] = ' ';
                 }
             }
+
+
     }
 };
 
@@ -131,6 +124,9 @@ int main()
 
         p.update(time);
 
+        if (p.rect.left > 300) offsetX = p.rect.left - 600/2;
+        if (p.rect.top > 200) offsetY = p.rect.top - 400/2;
+
 
         window.clear(Color::White);
 
@@ -143,7 +139,7 @@ int main()
 
                 if (TileMap[i][j] == ' ') continue;
 
-                rectangle.setPosition(j * 32, i * 32);
+                rectangle.setPosition(j * 32 - offsetX, i * 32 - offsetY);
                 window.draw(rectangle);
             }
 
